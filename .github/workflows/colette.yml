@@ -1,0 +1,52 @@
+name: colette
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [opened, closed, synchronize]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'  
+  issues:
+    types: [opened, edited, closed]
+  issue_comment:
+    types: [created, edited, deleted]
+  repository_dispatch:
+  release:
+    types: [published, edited, created]
+
+jobs:
+  test_discord_notification:
+    runs-on: ubuntu-latest
+    name: Colette Notification
+    steps:
+      - name: Set Notification Message
+        id: set_message
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "Message=Hey! New commit up on the mva repo!!!" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "Message=Hey! A pull request has been ${{ github.event.action }} in the repo!!!" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "Message=Hey! A manual workflow dispatch has been triggered!!!" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "Message=Hey! A scheduled workflow run!!!" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "issues" ]; then
+            echo "Message=Hey! An issue has been ${{ github.event.action }}!!!" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "issue_comment" ]; then
+            echo "Message=Hey! An issue comment has been ${{ github.event.action }}!!!" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            echo "Message=Hey! A repository dispatch event has been triggered!!!" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            echo "Message=Hey! A release has been ${{ github.event.action }}!!!" >> $GITHUB_ENV
+          else
+            echo "Message=Hey! An event of type ${{ github.event_name }} occurred!!!" >> $GITHUB_ENV
+          fi
+      - name: Send Notification
+        uses: Power-Room-Studio/colette@main
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }} 
+          msg-content: ${{ env.Message }}
+          embed-color: '3093151'
+          footer-icon: 'https://media.discordapp.net/attachments/1251912036674310205/1251918009220468797/image.png'
